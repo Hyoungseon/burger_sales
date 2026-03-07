@@ -583,14 +583,112 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 
 <!-- ══════════════════════════════════════════
+  SCREEN: MONTHLY REVENUE INPUT
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-revenue">
+  <div class="page-header">
+    <button class="back-btn" onclick="goScreen('screen-home')">←</button>
+    <div>
+      <div class="page-label" style="color:var(--gold)">MONTHLY REVENUE</div>
+      <div class="page-title">월 매출 입력</div>
+    </div>
+    <span style="font-size:24px">💰</span>
+  </div>
+
+  <!-- 월 선택 -->
+  <div class="month-bar">
+    <div class="month-nav">
+      <button class="month-arrow" onclick="changeRevMonth(-1)">‹</button>
+      <div class="month-val" id="rev-month-val"></div>
+      <button class="month-arrow" onclick="changeRevMonth(1)">›</button>
+    </div>
+    <button class="copy-btn" onclick="copyLastRevMonth()">지난달 복사 ↓</button>
+  </div>
+
+  <!-- 전체 매출 입력 -->
+  <div class="big-card" style="background:linear-gradient(135deg,#1a1508,#111009);border:2px solid rgba(232,184,75,.35);margin:0 20px 14px;border-radius:20px;padding:20px">
+    <div class="big-card-header">
+      <div class="big-card-emoji">💰</div>
+      <div><div class="big-card-title">월 전체 매출</div><div class="big-card-sub">이번 달 총 매출 합산</div></div>
+    </div>
+    <div class="big-input-wrap">
+      <div class="big-won">₩</div>
+      <input class="big-input" id="rev-total" type="number" inputmode="numeric" placeholder="0" oninput="calcRevenue()" style="color:var(--gold-light)">
+    </div>
+    <div class="big-card-hint">
+      <span class="hint-tag">💳 카드</span><span class="hint-tag">💵 현금</span><span class="hint-tag">📲 QR</span><span class="hint-tag">🛵 배달 포함 전체</span>
+    </div>
+  </div>
+
+  <!-- 배달 매출 입력 -->
+  <div class="big-card delivery-card" style="margin:0 20px 14px">
+    <div class="big-card-header">
+      <div class="big-card-emoji">🛵</div>
+      <div><div class="big-card-title">월 배달 매출</div><div class="big-card-sub">배달앱 + 전화주문 합산</div></div>
+    </div>
+    <div class="big-input-wrap">
+      <div class="big-won">₩</div>
+      <input class="big-input" id="rev-delivery" type="number" inputmode="numeric" placeholder="0" oninput="calcRevenue()">
+    </div>
+    <div class="big-card-hint">
+      <span class="hint-tag">🟢 배민</span><span class="hint-tag">🔴 쿠팡</span><span class="hint-tag">🩷 요기요</span><span class="hint-tag">📞 전화</span>
+    </div>
+  </div>
+
+  <!-- 홀 매출 자동계산 -->
+  <div style="margin:0 20px 14px;background:var(--surface);border:1px dashed var(--border2);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+    <div style="font-size:22px">🏠</div>
+    <div style="flex:1">
+      <div style="font-size:10px;color:var(--text-3);letter-spacing:.5px;margin-bottom:2px">홀 매출 (자동계산)</div>
+      <div style="font-size:11px;color:var(--text-3)">전체 매출 − 배달 매출</div>
+    </div>
+    <div style="font-family:'Bebas Neue',cursive;font-size:24px;color:var(--gold)" id="rev-hall-auto">₩0</div>
+  </div>
+
+  <!-- 비중 바 -->
+  <div class="ratio-wrap">
+    <div class="ratio-row">
+      <span>🏠 홀 <strong id="rev-hall-pct" style="color:var(--gold)">—</strong></span>
+      <span>🛵 배달 <strong id="rev-delivery-pct" style="color:var(--blue)">—</strong></span>
+    </div>
+    <div class="ratio-bg">
+      <div class="ratio-hall" id="rev-ratio-hall" style="width:50%"></div>
+      <div class="ratio-delivery" id="rev-ratio-delivery" style="width:50%"></div>
+    </div>
+  </div>
+
+  <!-- 요약 카드 -->
+  <div class="total-hero" style="margin:0 20px 14px">
+    <div class="total-hero-label">이번 달 총 매출</div>
+    <div class="total-hero-value" id="rev-total-display">₩0</div>
+    <div class="total-hero-grid">
+      <div class="thg-item"><div class="thg-label">🏠 홀</div><div class="thg-value" style="color:var(--gold)" id="rev-th-hall">₩0</div></div>
+      <div class="thg-item"><div class="thg-label">🛵 배달</div><div class="thg-value" style="color:var(--blue)" id="rev-th-delivery">₩0</div></div>
+      <div class="thg-item"><div class="thg-label">📊 배달비중</div><div class="thg-value" style="color:var(--text-3)" id="rev-th-ratio">—</div></div>
+    </div>
+  </div>
+
+  <!-- 메모 -->
+  <div class="memo-wrap">
+    <div class="memo-lbl">📝 메모 (선택)</div>
+    <textarea class="memo-input" id="rev-memo" rows="2" placeholder="이번 달 매출 특이사항..."></textarea>
+  </div>
+
+  <!-- 저장 버튼 -->
+  <div class="save-btn-wrap">
+    <button class="save-btn" id="rev-save-btn" onclick="saveRevenue()" disabled>✅ 월 매출 저장하기</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
   SCREEN 2: SALES INPUT
 ══════════════════════════════════════════ -->
 <div class="screen" id="screen-sales">
   <div class="page-header">
     <button class="back-btn" onclick="goScreen('screen-home')">←</button>
     <div>
-      <div class="page-label" style="color:var(--gold)">DAILY CLOSE</div>
-      <div class="page-title">일마감 매출 입력</div>
+      <div class="page-label" style="color:var(--blue)">DAILY TRACKING</div>
+      <div class="page-title">일별 매출 입력</div>
     </div>
     <span style="font-size:24px">🍔</span>
   </div>
@@ -606,24 +704,26 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <span style="color:var(--gold);font-size:18px">›</span>
   </div>
 
-  <div class="big-card hall-card">
+  <!-- 전체 매출 입력 -->
+  <div class="big-card" style="background:linear-gradient(135deg,#1a1508,#111009);border-color:rgba(232,184,75,.35)">
     <div class="big-card-header">
-      <div class="big-card-emoji">🏠</div>
-      <div><div class="big-card-title">홀 매출</div><div class="big-card-sub">매장 내 결제 전체 합산</div></div>
+      <div class="big-card-emoji">💰</div>
+      <div><div class="big-card-title">전체 매출</div><div class="big-card-sub">오늘 하루 총 매출 합산</div></div>
     </div>
     <div class="big-input-wrap">
       <div class="big-won">₩</div>
-      <input class="big-input" id="sales-hall" type="number" inputmode="numeric" placeholder="0" oninput="calcSales()">
+      <input class="big-input" id="sales-total-input" type="number" inputmode="numeric" placeholder="0" oninput="calcSales()" style="color:var(--gold-light)">
     </div>
     <div class="big-card-hint">
-      <span class="hint-tag">💳 카드</span><span class="hint-tag">💵 현금</span><span class="hint-tag">📲 QR결제</span><span class="hint-tag">모두 합산</span>
+      <span class="hint-tag">💳 카드</span><span class="hint-tag">💵 현금</span><span class="hint-tag">📲 QR</span><span class="hint-tag">🛵 배달 포함 전체</span>
     </div>
   </div>
 
+  <!-- 배달 매출 입력 -->
   <div class="big-card delivery-card">
     <div class="big-card-header">
       <div class="big-card-emoji">🛵</div>
-      <div><div class="big-card-title">배달 매출</div><div class="big-card-sub">배달앱 + 전화주문 전체 합산</div></div>
+      <div><div class="big-card-title">배달 매출</div><div class="big-card-sub">배달앱 + 전화주문 합산</div></div>
     </div>
     <div class="big-input-wrap">
       <div class="big-won">₩</div>
@@ -634,6 +734,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
   </div>
 
+  <!-- 홀 매출 자동 계산 표시 -->
+  <div style="margin:0 20px 14px;background:var(--surface);border:1px dashed var(--border2);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+    <div style="font-size:22px">🏠</div>
+    <div style="flex:1">
+      <div style="font-size:10px;color:var(--text-3);letter-spacing:.5px;margin-bottom:3px">홀 매출 (자동계산)</div>
+      <div style="font-size:11px;color:var(--text-3)">전체 매출 − 배달 매출</div>
+    </div>
+    <div style="font-family:'Bebas Neue',cursive;font-size:24px;color:var(--gold)" id="sales-hall-auto">₩0</div>
+  </div>
+
+  <!-- 비중 바 -->
   <div class="ratio-wrap">
     <div class="ratio-row">
       <span>🏠 홀 <strong id="sales-hall-pct" style="color:var(--gold)">—</strong></span>
@@ -645,6 +756,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
   </div>
 
+  <!-- 합계 요약 -->
   <div class="total-hero">
     <div class="total-hero-label">오늘의 총 매출</div>
     <div class="total-hero-value" id="sales-total">₩0</div>
@@ -661,7 +773,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 
   <div class="save-btn-wrap">
-    <button class="save-btn" id="sales-save-btn" onclick="saveSales()" disabled>✅ 매출 저장하기</button>
+    <button class="save-btn" id="sales-save-btn" onclick="saveSales()" disabled>📅 일별 매출 저장</button>
   </div>
 </div>
 
@@ -808,7 +920,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
   <div id="pl-monthly">
     <div class="pl-summary">
-      <div class="pl-lbl">이번 달 순이익</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div class="pl-lbl" style="margin-bottom:0">이번 달 순이익</div>
+        <button onclick="goScreen('screen-revenue')" style="font-size:10px;padding:4px 10px;border-radius:12px;background:var(--gold-dim);border:1px solid rgba(232,184,75,.3);color:var(--gold);cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-weight:700">월매출 입력 →</button>
+      </div>
       <div class="pl-value" id="pl-net">₩4,600,000</div>
       <div class="pl-row"><div class="pl-row-label">💰 총 매출</div><div class="pl-row-value" style="color:var(--gold)" id="pl-revenue">₩13,000,000</div></div>
       <div class="pl-row"><div class="pl-row-label">📤 총 지출</div><div class="pl-row-value" style="color:var(--red)" id="pl-expense">−₩8,400,000</div></div>
@@ -1007,7 +1122,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <div class="bottom-nav">
   <button class="nav-item active" onclick="goScreen('screen-home')"><span class="nav-icon">🏠</span>홈</button>
   <button class="nav-item" onclick="goScreen('screen-pl')"><span class="nav-icon">📊</span>손익</button>
-  <button class="nav-item" onclick="goScreen('screen-sales')"><span class="nav-icon">💸</span>매출</button>
+  <button class="nav-item" onclick="goScreen('screen-revenue')"><span class="nav-icon">💰</span>월매출</button>
+  <button class="nav-item" onclick="goScreen('screen-sales')"><span class="nav-icon">📅</span>일매출</button>
   <button class="nav-item" onclick="goScreen('screen-expense')"><span class="nav-icon">🧾</span>지출</button>
   <button class="nav-item" onclick="goScreen('screen-data')"><span class="nav-icon">💾</span>데이터</button>
 </div>
@@ -1028,7 +1144,8 @@ function initDB() {
       S001:{
         info:{id:'S001',name:'1호점 (강남)',location:'서울 강남구',createdAt:'2025-01-01'},
         sales: genSampleSales(),
-        expenses: genSampleExpenses()
+        expenses: genSampleExpenses(),
+        monthlyRevenue: genSampleRevenue()
       }
     }
   };
@@ -1049,6 +1166,12 @@ function genSampleExpenses(){
     {year:2025,month:2,material:3200000,staff:2800000,mgmt:650000,fixed:1200000,royalty:390000,etc:160000,total:8400000,memo:''}
   ];
 }
+function genSampleRevenue(){
+  return [
+    {year:2025,month:1,total:11800000,delivery:4200000,hall:7600000,memo:''},
+    {year:2025,month:2,total:13000000,delivery:5720000,hall:7280000,memo:''}
+  ];
+}
 function getDB(){return JSON.parse(localStorage.getItem(DB_KEY)||'{}')}
 function saveDB(db){localStorage.setItem(DB_KEY,JSON.stringify(db))}
 function getStore(){const db=getDB();return db.stores[db.activeStore]}
@@ -1058,8 +1181,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 /* ════════════════════════════════
    NAVIGATION
 ════════════════════════════════ */
-const SCREENS=['screen-home','screen-sales','screen-expense','screen-pl','screen-data'];
-const NAV_ITEMS=['screen-home','screen-pl','screen-sales','screen-expense','screen-data'];
+const SCREENS=['screen-home','screen-pl','screen-revenue','screen-sales','screen-expense','screen-data'];
+const NAV_ITEMS=['screen-home','screen-pl','screen-revenue','screen-sales','screen-expense','screen-data'];
 let currentScreen='screen-home';
 
 function goScreen(id){
@@ -1081,6 +1204,7 @@ function goScreen(id){
 
   // Screen init
   if(id==='screen-home') refreshHome();
+  if(id==='screen-revenue') initRevenueScreen();
   if(id==='screen-sales') initSalesScreen();
   if(id==='screen-expense') initExpenseScreen();
   if(id==='screen-pl') refreshPL();
@@ -1097,14 +1221,20 @@ function refreshHome(){
   document.getElementById('home-date').textContent=`${now.getMonth()+1}월 ${now.getDate()}일 (${DAYS[now.getDay()]})`;
   document.getElementById('home-store-badge').textContent=store.info.name;
 
-  const ym=`2025-02`;
+  const now2=new Date();
+  const cy=now2.getFullYear(), cm=now2.getMonth()+1;
+  // 월 매출 기준
+  if(!store.monthlyRevenue) store.monthlyRevenue=[];
+  const monthRev=store.monthlyRevenue.find(r=>r.year===cy&&r.month===cm);
+  const totalRev=monthRev?monthRev.total:0;
+  const totalHall=monthRev?monthRev.hall:0;
+  const totalDel=monthRev?monthRev.delivery:0;
+  // 일 매출로 일수 계산 (일평균용)
+  const ym=`${cy}-${String(cm).padStart(2,'0')}`;
   const monthlySales=store.sales.filter(s=>s.date.startsWith(ym));
-  const totalRev=monthlySales.reduce((s,r)=>s+r.total,0);
-  const totalHall=monthlySales.reduce((s,r)=>s+r.hall,0);
-  const totalDel=monthlySales.reduce((s,r)=>s+r.delivery,0);
   const days=monthlySales.length||1;
-  const exp=store.expenses.find(e=>e.year===2025&&e.month===2);
-  const profit=exp?totalRev-exp.total:0;
+  const exp=store.expenses.find(e=>e.year===cy&&e.month===cm);
+  const profit=exp?(totalRev-exp.total):0;
 
   document.getElementById('home-hero-amount').textContent=fmt(totalRev);
   document.getElementById('home-hero-avg').textContent=fmt(Math.round(totalRev/days));
@@ -1182,11 +1312,11 @@ function initSalesScreen(){
   const store=getStore();
   const existing=store.sales.find(s=>s.date===calSelected);
   if(existing){
-    document.getElementById('sales-hall').value=existing.hall||'';
+    document.getElementById('sales-total-input').value=existing.total||'';
     document.getElementById('sales-delivery').value=existing.delivery||'';
     document.getElementById('sales-memo').value=existing.memo||'';
   } else {
-    document.getElementById('sales-hall').value='';
+    document.getElementById('sales-total-input').value='';
     document.getElementById('sales-delivery').value='';
     document.getElementById('sales-memo').value='';
   }
@@ -1291,13 +1421,13 @@ function confirmDate() {
   const store = getStore();
   const existing = store.sales.find(s => s.date === calSelected);
   if (existing) {
-    document.getElementById('sales-hall').value = existing.hall || '';
+    document.getElementById('sales-total-input').value = existing.total || '';
     document.getElementById('sales-delivery').value = existing.delivery || '';
     document.getElementById('sales-memo').value = existing.memo || '';
     calcSales();
     showToast('📋 기존 입력 데이터를 불러왔어요!');
   } else {
-    document.getElementById('sales-hall').value = '';
+    document.getElementById('sales-total-input').value = '';
     document.getElementById('sales-delivery').value = '';
     document.getElementById('sales-memo').value = '';
     calcSales();
@@ -1305,30 +1435,49 @@ function confirmDate() {
 }
 
 function calcSales(){
-  const hall=parseFloat(document.getElementById('sales-hall').value)||0;
-  const del=parseFloat(document.getElementById('sales-delivery').value)||0;
-  const total=hall+del;
-  document.getElementById('sales-total').textContent=fmt(total);
-  document.getElementById('th-hall').textContent=fmt(hall);
-  document.getElementById('th-delivery').textContent=fmt(del);
-  if(total>0){
-    const hp=Math.round(hall/total*100),dp=100-hp;
-    document.getElementById('sales-hall-pct').textContent=hp+'%';
-    document.getElementById('sales-delivery-pct').textContent=dp+'%';
-    document.getElementById('sales-ratio-hall').style.width=hp+'%';
-    document.getElementById('sales-ratio-delivery').style.width=dp+'%';
-    document.getElementById('th-ratio').textContent=dp+'%';
+  const total = parseFloat(document.getElementById('sales-total-input').value)||0;
+  const del   = parseFloat(document.getElementById('sales-delivery').value)||0;
+  // 홀 = 전체 - 배달 (음수 방지)
+  const hall  = Math.max(0, total - del);
+
+  // 홀 자동계산 표시
+  document.getElementById('sales-hall-auto').textContent = fmt(hall);
+
+  // 배달이 전체보다 크면 경고 표시
+  const autoEl = document.getElementById('sales-hall-auto');
+  if(del > total && total > 0){
+    autoEl.style.color = 'var(--red)';
+    autoEl.textContent = '⚠️ 확인 필요';
+  } else {
+    autoEl.style.color = 'var(--gold)';
+    autoEl.textContent = fmt(hall);
+  }
+
+  document.getElementById('sales-total').textContent = fmt(total);
+  document.getElementById('th-hall').textContent     = fmt(hall);
+  document.getElementById('th-delivery').textContent = fmt(del);
+
+  if(total > 0){
+    const hp = Math.round(hall/total*100);
+    const dp = 100 - hp;
+    document.getElementById('sales-hall-pct').textContent     = hp+'%';
+    document.getElementById('sales-delivery-pct').textContent = dp+'%';
+    document.getElementById('sales-ratio-hall').style.width     = hp+'%';
+    document.getElementById('sales-ratio-delivery').style.width = dp+'%';
+    document.getElementById('th-ratio').textContent = dp+'%';
   } else {
     ['sales-hall-pct','sales-delivery-pct','th-ratio'].forEach(id=>document.getElementById(id).textContent='—');
-    document.getElementById('sales-ratio-hall').style.width='50%';
-    document.getElementById('sales-ratio-delivery').style.width='50%';
+    document.getElementById('sales-ratio-hall').style.width     = '50%';
+    document.getElementById('sales-ratio-delivery').style.width = '50%';
   }
-  document.getElementById('sales-save-btn').disabled=total===0;
+  // 전체 매출이 0이 아니고, 배달이 전체 이하일 때만 저장 활성화
+  document.getElementById('sales-save-btn').disabled = (total === 0 || del > total);
 }
 
 function saveSales(){
-  const hall=parseFloat(document.getElementById('sales-hall').value)||0;
+  const total_input=parseFloat(document.getElementById('sales-total-input').value)||0;
   const del=parseFloat(document.getElementById('sales-delivery').value)||0;
+  const hall=Math.max(0, total_input - del);
   const memo=document.getElementById('sales-memo').value;
   // 달력에서 선택한 날짜 우선, 없으면 오늘
   const now=new Date();
@@ -1337,11 +1486,105 @@ function saveSales(){
   const db=getDB();
   const store=db.stores[db.activeStore];
   const idx=store.sales.findIndex(s=>s.date===date);
-  const rec={date,hall,delivery:del,total:hall+del,memo};
+  const rec={date,hall,delivery:del,total:total_input,memo};
   if(idx>=0)store.sales[idx]=rec; else store.sales.push(rec);
   store.sales.sort((a,b)=>a.date.localeCompare(b.date));
   saveDB(db);
   showToast('✅ 매출이 저장되었어요!');
+  setTimeout(()=>goScreen('screen-home'),1200);
+}
+
+/* ════════════════════════════════
+   월 매출 입력 화면
+════════════════════════════════ */
+let revYear=new Date().getFullYear(), revMonth=new Date().getMonth()+1;
+
+function initRevenueScreen(){
+  revYear=new Date().getFullYear();
+  revMonth=new Date().getMonth()+1;
+  renderRevMonth();
+  loadRevenueMonth();
+}
+function renderRevMonth(){
+  document.getElementById('rev-month-val').textContent=`${revYear}년 ${revMonth}월`;
+}
+function changeRevMonth(d){
+  revMonth+=d;
+  if(revMonth>12){revMonth=1;revYear++;}
+  if(revMonth<1){revMonth=12;revYear--;}
+  renderRevMonth();
+  loadRevenueMonth();
+}
+function loadRevenueMonth(){
+  const db=getDB();
+  const store=db.stores[db.activeStore];
+  if(!store.monthlyRevenue) store.monthlyRevenue=[];
+  const existing=store.monthlyRevenue.find(r=>r.year===revYear&&r.month===revMonth);
+  if(existing){
+    document.getElementById('rev-total').value=existing.total||'';
+    document.getElementById('rev-delivery').value=existing.delivery||'';
+    document.getElementById('rev-memo').value=existing.memo||'';
+  } else {
+    document.getElementById('rev-total').value='';
+    document.getElementById('rev-delivery').value='';
+    document.getElementById('rev-memo').value='';
+  }
+  calcRevenue();
+}
+function copyLastRevMonth(){
+  const db=getDB();
+  const store=db.stores[db.activeStore];
+  if(!store.monthlyRevenue) store.monthlyRevenue=[];
+  const py=revMonth===1?revYear-1:revYear;
+  const pm=revMonth===1?12:revMonth-1;
+  const prev=store.monthlyRevenue.find(r=>r.year===py&&r.month===pm);
+  if(!prev){showToast('❌ 지난달 데이터가 없어요.');return;}
+  document.getElementById('rev-total').value=prev.total||'';
+  document.getElementById('rev-delivery').value=prev.delivery||'';
+  calcRevenue();
+  showToast('📋 지난달 데이터를 복사했어요!');
+}
+function calcRevenue(){
+  const total=parseFloat(document.getElementById('rev-total').value)||0;
+  const del=parseFloat(document.getElementById('rev-delivery').value)||0;
+  const hall=Math.max(0,total-del);
+  const autoEl=document.getElementById('rev-hall-auto');
+  if(del>total&&total>0){
+    autoEl.style.color='var(--red)';autoEl.textContent='⚠️ 확인 필요';
+  } else {
+    autoEl.style.color='var(--gold)';autoEl.textContent=fmt(hall);
+  }
+  document.getElementById('rev-total-display').textContent=fmt(total);
+  document.getElementById('rev-th-hall').textContent=fmt(hall);
+  document.getElementById('rev-th-delivery').textContent=fmt(del);
+  if(total>0){
+    const hp=Math.round(hall/total*100),dp=100-hp;
+    document.getElementById('rev-hall-pct').textContent=hp+'%';
+    document.getElementById('rev-delivery-pct').textContent=dp+'%';
+    document.getElementById('rev-ratio-hall').style.width=hp+'%';
+    document.getElementById('rev-ratio-delivery').style.width=dp+'%';
+    document.getElementById('rev-th-ratio').textContent=dp+'%';
+  } else {
+    ['rev-hall-pct','rev-delivery-pct','rev-th-ratio'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('rev-ratio-hall').style.width='50%';
+    document.getElementById('rev-ratio-delivery').style.width='50%';
+  }
+  document.getElementById('rev-save-btn').disabled=(total===0||del>total);
+}
+function saveRevenue(){
+  const total=parseFloat(document.getElementById('rev-total').value)||0;
+  const del=parseFloat(document.getElementById('rev-delivery').value)||0;
+  const hall=Math.max(0,total-del);
+  const memo=document.getElementById('rev-memo').value;
+  const db=getDB();
+  const store=db.stores[db.activeStore];
+  if(!store.monthlyRevenue) store.monthlyRevenue=[];
+  const idx=store.monthlyRevenue.findIndex(r=>r.year===revYear&&r.month===revMonth);
+  const rec={year:revYear,month:revMonth,total,delivery:del,hall,memo};
+  if(idx>=0) store.monthlyRevenue[idx]=rec; else store.monthlyRevenue.push(rec);
+  store.monthlyRevenue.sort((a,b)=>a.year!==b.year?a.year-b.year:a.month-b.month);
+  saveDB(db);
+  showToast('✅ 월 매출이 저장되었어요!');
   setTimeout(()=>goScreen('screen-home'),1200);
 }
 
@@ -1472,10 +1715,13 @@ function saveExpense(){
 ════════════════════════════════ */
 function refreshPL(){
   const store=getStore();
-  const ym='2025-02';
-  const monthlySales=store.sales.filter(s=>s.date.startsWith(ym));
-  const rev=monthlySales.reduce((s,r)=>s+r.total,0);
-  const exp=store.expenses.find(e=>e.year===2025&&e.month===2);
+  const now=new Date();
+  const curYear=now.getFullYear(), curMonth=now.getMonth()+1;
+  // 월 매출 기준으로 손익 계산
+  if(!store.monthlyRevenue) store.monthlyRevenue=[];
+  const monthRev=store.monthlyRevenue.find(r=>r.year===curYear&&r.month===curMonth);
+  const rev=monthRev?monthRev.total:0;
+  const exp=store.expenses.find(e=>e.year===curYear&&e.month===curMonth);
   const expTotal=exp?exp.total:0;
   const profit=rev-expTotal;
   const margin=rev>0?+(profit/rev*100).toFixed(1):0;
@@ -1695,14 +1941,24 @@ async function exportXLSX(){
     const expRows=[['연도','월','재료비','인건비','관리비','고정비','로얄티','기타','총지출','메모'],...store.expenses.map(e=>[e.year,e.month,e.material,e.staff,e.mgmt,e.fixed,e.royalty,e.etc,e.total,e.memo])];
     const ws2=XLSX.utils.aoa_to_sheet(expRows);
     XLSX.utils.book_append_sheet(wb,ws2,`${store.info.name}_지출`);
+    // 월 매출 시트
+    if(store.monthlyRevenue&&store.monthlyRevenue.length>0){
+      const revRows=[['연도','월','전체매출','배달매출','홀매출','메모'],
+        ...store.monthlyRevenue.map(r=>[r.year,r.month,r.total,r.delivery,r.hall,r.memo||''])];
+      const wsRev=XLSX.utils.aoa_to_sheet(revRows);
+      wsRev['!cols']=[{wch:8},{wch:6},{wch:14},{wch:14},{wch:14},{wch:20}];
+      XLSX.utils.book_append_sheet(wb,wsRev,`${store.info.name}_월매출`);
+    }
     setProg(75,'손익 요약 시트 생성 중');await sleep(200);
-    const sumMap={};
-    store.sales.forEach(s=>{const ym=s.date.slice(0,7);if(!sumMap[ym])sumMap[ym]={hall:0,delivery:0,total:0};sumMap[ym].hall+=s.hall;sumMap[ym].delivery+=s.delivery;sumMap[ym].total+=s.total;});
-    const sumRows=[['연월','홀매출','배달매출','총매출','총지출','순이익','이익률(%)'],...Object.entries(sumMap).map(([ym,rev])=>{
-      const[y,m]=ym.split('-').map(Number);const exp=store.expenses.find(e=>e.year===y&&e.month===m);
-      const et=exp?exp.total:0;const pf=rev.total-et;const mg=et>0?+(pf/rev.total*100).toFixed(1):'';
-      return[ym,rev.hall,rev.delivery,rev.total,et,pf,mg];
-    })];
+    const mr=store.monthlyRevenue||[];
+    const sumRows=[['연월','홀매출','배달매출','총매출','총지출','순이익','이익률(%)'],
+      ...mr.map(rev=>{
+        const ym=`${rev.year}-${String(rev.month).padStart(2,'0')}`;
+        const exp=store.expenses.find(e=>e.year===rev.year&&e.month===rev.month);
+        const et=exp?exp.total:0;const pf=rev.total-et;
+        const mg=rev.total>0?+(pf/rev.total*100).toFixed(1):'';
+        return[ym,rev.hall,rev.delivery,rev.total,et,pf,mg];
+      })];
     const ws3=XLSX.utils.aoa_to_sheet(sumRows);
     XLSX.utils.book_append_sheet(wb,ws3,`${store.info.name}_손익요약`);
   }
