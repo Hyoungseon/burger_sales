@@ -435,6 +435,39 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .store-modal-item{display:flex;align-items:center;gap:11px;padding:13px;border-radius:12px;border:1px solid var(--border);margin-bottom:8px;cursor:pointer;transition:border-color .2s;background:var(--surface2)}
 .store-modal-item:hover{border-color:var(--gold)}
 .store-modal-item.active{border-color:var(--gold);background:var(--gold-dim)}
+/* ══ 매장 편집 모달 ══ */
+.edit-modal-field{margin-bottom:14px}
+.edit-modal-label{font-size:11px;color:var(--text-3);letter-spacing:1px;margin-bottom:6px}
+.edit-modal-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:11px;padding:12px 14px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;outline:none;transition:border-color .2s}
+.edit-modal-input:focus{border-color:var(--gold)}
+.edit-modal-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.edit-save-btn{padding:13px;background:var(--gold);border:none;border-radius:12px;font-family:'Bebas Neue',cursive;font-size:16px;color:#09090b;cursor:pointer;letter-spacing:.5px}
+.edit-save-btn:active{transform:scale(.97)}
+.edit-del-btn{padding:13px;background:var(--red-dim);border:1px solid rgba(248,113,113,.3);border-radius:12px;font-family:'Bebas Neue',cursive;font-size:16px;color:var(--red);cursor:pointer;letter-spacing:.5px}
+.edit-del-btn:active{transform:scale(.97)}
+
+/* ══ 달력 ══ */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-nav{width:34px;height:34px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s}
+.cal-nav:hover{border-color:var(--gold)}
+.cal-month-title{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;color:var(--gold)}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
+.cal-weekday{text-align:center;font-size:10px;font-weight:700;color:var(--text-3);padding:4px 0}
+.cal-weekday:first-child{color:var(--red)}
+.cal-weekday:last-child{color:var(--blue)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid transparent;position:relative}
+.cal-day:hover{background:var(--surface2);border-color:var(--border)}
+.cal-day.other-month{color:var(--text-3);opacity:.4}
+.cal-day.today{border-color:var(--gold)!important;color:var(--gold);font-weight:700}
+.cal-day.selected{background:var(--gold);color:#09090b;font-weight:700;border-color:var(--gold)}
+.cal-day.has-data::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--green)}
+.cal-day.selected.has-data::after{background:#09090b}
+.cal-day.sunday{color:var(--red)}
+.cal-day.saturday{color:var(--blue)}
+.cal-day.sunday.selected,.cal-day.saturday.selected{color:#09090b}
+.cal-confirm-btn{width:100%;padding:13px;background:var(--gold);border:none;border-radius:12px;font-family:'Bebas Neue',cursive;font-size:17px;color:#09090b;cursor:pointer;margin-top:14px;letter-spacing:.5px}
+.cal-confirm-btn:active{transform:scale(.97)}
 .smi-icon{font-size:22px}
 .smi-info{flex:1}
 .smi-name{font-weight:700;font-size:14px}
@@ -917,6 +950,45 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
+<!-- 매장 편집 모달 -->
+<div class="modal-overlay" id="store-edit-modal" onclick="closeModal(event,'store-edit-modal')">
+  <div class="modal">
+    <div class="modal-title" id="store-edit-title">매장 편집</div>
+    <input type="hidden" id="store-edit-id">
+    <div class="edit-modal-field">
+      <div class="edit-modal-label">🍔 매장 이름</div>
+      <input class="edit-modal-input" id="store-edit-name" type="text" placeholder="예: 1호점 (강남)">
+    </div>
+    <div class="edit-modal-field">
+      <div class="edit-modal-label">📍 위치</div>
+      <input class="edit-modal-input" id="store-edit-location" type="text" placeholder="예: 서울 강남구">
+    </div>
+    <div class="edit-modal-btn-row">
+      <button class="edit-save-btn" onclick="saveStoreEdit()">✅ 저장</button>
+      <button class="edit-del-btn" onclick="deleteStore()">🗑️ 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 날짜 선택 달력 모달 -->
+<div class="modal-overlay" id="cal-modal" onclick="closeModal(event,'cal-modal')">
+  <div class="modal" style="padding-bottom:20px">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calMove(-1)">‹</button>
+      <div class="cal-month-title" id="cal-title"></div>
+      <button class="cal-nav" onclick="calMove(1)">›</button>
+    </div>
+    <div class="cal-weekdays">
+      <div class="cal-weekday">일</div><div class="cal-weekday">월</div>
+      <div class="cal-weekday">화</div><div class="cal-weekday">수</div>
+      <div class="cal-weekday">목</div><div class="cal-weekday">금</div>
+      <div class="cal-weekday" style="color:var(--blue)">토</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <button class="cal-confirm-btn" onclick="confirmDate()">✅ 이 날짜로 선택</button>
+  </div>
+</div>
+
 <div class="progress-overlay" id="progress-overlay">
   <div class="progress-box">
     <div class="progress-box-title" id="prog-title">처리 중...</div>
@@ -1099,16 +1171,138 @@ function buildMiniBarChart(id){
 function initSalesScreen(){
   const now=new Date();
   const DAYS=['일','월','화','수','목','금','토'];
+  // 달력 선택 초기값 = 오늘
+  calYear   = now.getFullYear();
+  calMonth  = now.getMonth() + 1;
+  calSelected = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   document.getElementById('sales-date-val').textContent=
     `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일`;
   document.getElementById('sales-date-day').textContent=`${DAYS[now.getDay()]}요일`;
-  // reset
-  document.getElementById('sales-hall').value='';
-  document.getElementById('sales-delivery').value='';
-  document.getElementById('sales-memo').value='';
+  // 오늘 기존 데이터 불러오기
+  const store=getStore();
+  const existing=store.sales.find(s=>s.date===calSelected);
+  if(existing){
+    document.getElementById('sales-hall').value=existing.hall||'';
+    document.getElementById('sales-delivery').value=existing.delivery||'';
+    document.getElementById('sales-memo').value=existing.memo||'';
+  } else {
+    document.getElementById('sales-hall').value='';
+    document.getElementById('sales-delivery').value='';
+    document.getElementById('sales-memo').value='';
+  }
   calcSales();
 }
-function pickDate(){alert('날짜 선택 달력이 열립니다!')}
+/* ════════════════════════════════
+   달력 (날짜 선택)
+════════════════════════════════ */
+let calYear, calMonth, calSelected;
+
+function pickDate() {
+  const cur = document.getElementById('sales-date-val').textContent;
+  // 현재 선택된 날짜 파싱 (예: 2025년 2월 23일)
+  const match = cur.match(/(\d+)년\s*(\d+)월\s*(\d+)일/);
+  const now = new Date();
+  calYear   = match ? parseInt(match[1]) : now.getFullYear();
+  calMonth  = match ? parseInt(match[2]) : now.getMonth() + 1;
+  calSelected = match
+    ? `${calYear}-${String(parseInt(match[2])).padStart(2,'0')}-${String(parseInt(match[3])).padStart(2,'0')}`
+    : `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  renderCal();
+  document.getElementById('cal-modal').classList.add('show');
+}
+
+function calMove(d) {
+  calMonth += d;
+  if (calMonth > 12) { calMonth = 1; calYear++; }
+  if (calMonth < 1)  { calMonth = 12; calYear--; }
+  renderCal();
+}
+
+function renderCal() {
+  document.getElementById('cal-title').textContent = `${calYear}년 ${calMonth}월`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  // 이 달 첫날 요일, 마지막 날
+  const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
+  const lastDate = new Date(calYear, calMonth, 0).getDate();
+  const prevLast = new Date(calYear, calMonth - 1, 0).getDate();
+
+  // 저장된 매출 날짜 목록 (점 표시용)
+  const store = getStore();
+  const savedDates = new Set(store.sales.map(s => s.date));
+
+  // 이전 달 빈칸
+  for (let i = 0; i < firstDay; i++) {
+    const d = prevLast - firstDay + 1 + i;
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month';
+    el.textContent = d;
+    grid.appendChild(el);
+  }
+
+  // 이번 달 날짜
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    const dow = new Date(calYear, calMonth-1, d).getDay();
+    let cls = 'cal-day';
+    if (dow === 0) cls += ' sunday';
+    if (dow === 6) cls += ' saturday';
+    if (dateStr === todayStr)    cls += ' today';
+    if (dateStr === calSelected) cls += ' selected';
+    if (savedDates.has(dateStr)) cls += ' has-data';
+    el.className = cls;
+    el.textContent = d;
+    el.onclick = () => selectCalDay(dateStr, el);
+    grid.appendChild(el);
+  }
+
+  // 다음 달 빈칸 (6줄 고정)
+  const total = firstDay + lastDate;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= remaining; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month';
+    el.textContent = i;
+    grid.appendChild(el);
+  }
+}
+
+function selectCalDay(dateStr, el) {
+  calSelected = dateStr;
+  document.querySelectorAll('.cal-day.selected').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function confirmDate() {
+  if (!calSelected) return;
+  const [y, m, d] = calSelected.split('-').map(Number);
+  const DAYS = ['일','월','화','수','목','금','토'];
+  const dow = new Date(y, m-1, d).getDay();
+  document.getElementById('sales-date-val').textContent = `${y}년 ${m}월 ${d}일`;
+  document.getElementById('sales-date-day').textContent = `${DAYS[dow]}요일`;
+  document.getElementById('cal-modal').classList.remove('show');
+
+  // 이미 저장된 날짜면 기존 데이터 불러오기
+  const store = getStore();
+  const existing = store.sales.find(s => s.date === calSelected);
+  if (existing) {
+    document.getElementById('sales-hall').value = existing.hall || '';
+    document.getElementById('sales-delivery').value = existing.delivery || '';
+    document.getElementById('sales-memo').value = existing.memo || '';
+    calcSales();
+    showToast('📋 기존 입력 데이터를 불러왔어요!');
+  } else {
+    document.getElementById('sales-hall').value = '';
+    document.getElementById('sales-delivery').value = '';
+    document.getElementById('sales-memo').value = '';
+    calcSales();
+  }
+}
 
 function calcSales(){
   const hall=parseFloat(document.getElementById('sales-hall').value)||0;
@@ -1136,8 +1330,10 @@ function saveSales(){
   const hall=parseFloat(document.getElementById('sales-hall').value)||0;
   const del=parseFloat(document.getElementById('sales-delivery').value)||0;
   const memo=document.getElementById('sales-memo').value;
+  // 달력에서 선택한 날짜 우선, 없으면 오늘
   const now=new Date();
-  const date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const date = calSelected ||
+    `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const db=getDB();
   const store=db.stores[db.activeStore];
   const idx=store.sales.findIndex(s=>s.date===date);
@@ -1404,10 +1600,20 @@ function openStoreModal(){
   const db=getDB();
   const list=document.getElementById('store-modal-list');
   list.innerHTML=Object.entries(db.stores).map(([id,s])=>`
-    <div class="store-modal-item ${id===db.activeStore?'active':''}" onclick="selectStore('${id}')">
-      <div class="smi-icon">🍔</div>
-      <div class="smi-info"><div class="smi-name">${s.info.name}</div><div class="smi-detail">${s.info.location} · 매출 ${s.sales.length}건</div></div>
-      ${id===db.activeStore?'<span style="color:var(--gold);font-size:18px">✓</span>':''}
+    <div class="store-modal-item ${id===db.activeStore?'active':''}" style="position:relative">
+      <div style="flex:1;display:flex;align-items:center;gap:11px" onclick="selectStore('${id}')">
+        <div class="smi-icon">🍔</div>
+        <div class="smi-info">
+          <div class="smi-name">${s.info.name}</div>
+          <div class="smi-detail">${s.info.location||'위치 미설정'} · 매출 ${s.sales.length}건</div>
+        </div>
+        ${id===db.activeStore?'<span style="color:var(--gold);font-size:18px">✓</span>':''}
+      </div>
+      <button onclick="event.stopPropagation();openStoreEdit('${id}')"
+        style="flex-shrink:0;margin-left:8px;width:32px;height:32px;border-radius:9px;
+               background:var(--surface3);border:1px solid var(--border2);
+               color:var(--text-2);font-size:14px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center">✏️</button>
     </div>`).join('');
   document.getElementById('store-modal').classList.add('show');
 }
@@ -1426,6 +1632,50 @@ function addStore(){
   document.getElementById('store-modal').classList.remove('show');
   refreshData();refreshHome();showToast('🍔 '+name+' 추가됨!');
 }
+function openStoreEdit(id){
+  const db=getDB();
+  const store=db.stores[id];
+  document.getElementById('store-edit-id').value=id;
+  document.getElementById('store-edit-name').value=store.info.name;
+  document.getElementById('store-edit-location').value=store.info.location||'';
+  document.getElementById('store-edit-title').textContent=`✏️ ${store.info.name} 편집`;
+  document.getElementById('store-modal').classList.remove('show');
+  document.getElementById('store-edit-modal').classList.add('show');
+}
+
+function saveStoreEdit(){
+  const id=document.getElementById('store-edit-id').value;
+  const name=document.getElementById('store-edit-name').value.trim();
+  const location=document.getElementById('store-edit-location').value.trim();
+  if(!name){showToast('❌ 매장 이름을 입력해 주세요!');return;}
+  const db=getDB();
+  db.stores[id].info.name=name;
+  db.stores[id].info.location=location;
+  saveDB(db);
+  document.getElementById('store-edit-modal').classList.remove('show');
+  refreshData();refreshHome();
+  showToast('✅ 매장 정보가 수정되었어요!');
+}
+
+function deleteStore(){
+  const id=document.getElementById('store-edit-id').value;
+  const db=getDB();
+  const name=db.stores[id].info.name;
+  const storeCount=Object.keys(db.stores).length;
+  if(storeCount<=1){showToast('❌ 마지막 매장은 삭제할 수 없어요!');return;}
+  if(!confirm(`⚠️ "${name}" 매장을 삭제할까요?
+
+매출·지출 데이터가 모두 삭제됩니다.
+이 작업은 되돌릴 수 없어요.`))return;
+  delete db.stores[id];
+  // 삭제된 매장이 현재 활성이면 다른 매장으로 전환
+  if(db.activeStore===id) db.activeStore=Object.keys(db.stores)[0];
+  saveDB(db);
+  document.getElementById('store-edit-modal').classList.remove('show');
+  refreshData();refreshHome();
+  showToast(`🗑️ "${name}" 매장이 삭제되었어요.`);
+}
+
 function closeModal(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('show')}
 
 /* ════════════════════════════════
