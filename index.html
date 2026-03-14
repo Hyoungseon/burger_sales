@@ -590,17 +590,26 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       </div>
     </div>
     <!-- x축 요일/날짜 라벨 -->
-    <div id="daily-x-labels" style="display:flex;justify-content:space-between;margin-top:4px;padding:0 2px"></div>
-    <!-- 범례 + 요약 -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-      <div style="display:flex;gap:10px">
-        <div class="leg"><div class="leg-dot" style="background:var(--gold)"></div>전체</div>
-        <div class="leg"><div class="leg-dot" style="background:var(--blue)"></div>배달</div>
-        <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>홀</div>
+    <div id="daily-x-labels" style="position:relative;height:16px;margin-top:2px"></div>
+    <!-- 범례 -->
+    <div style="display:flex;gap:10px;margin-top:10px;margin-bottom:10px">
+      <div class="leg"><div class="leg-dot" style="background:var(--gold)"></div>전체</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--blue)"></div>배달</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>홀</div>
+    </div>
+    <!-- 평균 3종 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <div style="background:var(--surface2);border-radius:10px;padding:8px 10px;text-align:center">
+        <div style="font-size:9px;color:var(--text-3);margin-bottom:3px">📅 평일 평균</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:14px;color:var(--text)" id="avg-weekday">—</div>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:9px;color:var(--text-3);margin-bottom:2px" id="daily-period-label">이번 주 일평균</div>
-        <div style="font-family:'Bebas Neue',cursive;font-size:15px;color:var(--gold)" id="daily-avg-label">—</div>
+      <div style="background:var(--surface2);border-radius:10px;padding:8px 10px;text-align:center">
+        <div style="font-size:9px;color:var(--text-3);margin-bottom:3px">🎉 주말 평균</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:14px;color:var(--gold)" id="avg-weekend">—</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:8px 10px;text-align:center">
+        <div style="font-size:9px;color:var(--text-3);margin-bottom:3px">📊 전체 평균</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:14px;color:var(--green)" id="avg-total">—</div>
       </div>
     </div>
   </div>
@@ -1390,12 +1399,12 @@ function buildDailyLineChart() {
 
   // 기간 라벨
   const modeLabel = dailyMode === 'thisWeek' ? '이번 주' : dailyMode === 'lastWeek' ? '지난 주' : '이번 달';
-  document.getElementById('daily-period-label').textContent = `${modeLabel} 일평균`;
+  // 기간 라벨 (삭제됨 - 평균 3종으로 대체)
 
   if (!hasAny) {
     canvas.style.display = 'none';
     emptyEl.style.display = 'flex';
-    document.getElementById('daily-avg-label').textContent = '—';
+    ['avg-weekday','avg-weekend','avg-total'].forEach(id=>document.getElementById(id).textContent='—');
     // x축 요일 그리기
     renderXLabels(slots);
     return;
@@ -1406,10 +1415,16 @@ function buildDailyLineChart() {
   // x축 라벨 렌더링
   renderXLabels(slots);
 
-  // 일평균 (데이터 있는 날만)
-  const withData = slotData.filter(s => s !== null);
-  const avg = Math.round(withData.reduce((s,r) => s+r.total, 0) / withData.length);
-  document.getElementById('daily-avg-label').textContent = fmt(avg);
+  // 평일/주말/전체 평균 계산
+  const withData = slotData.map((s,i) => s ? {sale:s, dow:slots[i].getDay()} : null).filter(v=>v!==null);
+  const weekdays = withData.filter(v => v.dow >= 1 && v.dow <= 5); // 월~금
+  const weekends = withData.filter(v => v.dow === 0 || v.dow === 6); // 토·일
+  const avgWeekday = weekdays.length ? Math.round(weekdays.reduce((s,v)=>s+v.sale.total,0)/weekdays.length) : null;
+  const avgWeekend = weekends.length ? Math.round(weekends.reduce((s,v)=>s+v.sale.total,0)/weekends.length) : null;
+  const avgTotal   = withData.length  ? Math.round(withData.reduce((s,v)=>s+v.sale.total,0)/withData.length)  : null;
+  document.getElementById('avg-weekday').textContent = avgWeekday !== null ? fmt(avgWeekday) : '—';
+  document.getElementById('avg-weekend').textContent = avgWeekend !== null ? fmt(avgWeekend) : '—';
+  document.getElementById('avg-total').textContent   = avgTotal   !== null ? fmt(avgTotal)   : '—';
 
   // 값 배열 (null → 0으로 처리, 단 선은 끊김 처리)
   const totals = slotData.map(s => s ? s.total : null);
@@ -1537,29 +1552,65 @@ function buildDailyLineChart() {
 function renderXLabels(slots) {
   const el = document.getElementById('daily-x-labels');
   if (!el) return;
+
+  // Canvas와 동일한 PAD 값
+  const PAD_L_X = 4, PAD_R_X = 52;
+  const W = el.parentElement.offsetWidth || 300;
+  const cW_X = W - PAD_L_X - PAD_R_X;
+  const n = slots.length;
   const todayStr = dateStr(new Date());
+
+  // xPos와 동일한 계산 → 퍼센트로 변환
+  function labelPct(i) {
+    const px = PAD_L_X + (n <= 1 ? cW_X/2 : i/(n-1)*cW_X);
+    return (px / W * 100).toFixed(2) + '%';
+  }
+
+  el.innerHTML = '';
+
   if (dailyMode === 'thisWeek' || dailyMode === 'lastWeek') {
-    // 월~일 7개 요일 표시
-    el.innerHTML = slots.map(d => {
+    // 7개 요일 전부 표시
+    slots.forEach((d, i) => {
       const isToday = dateStr(d) === todayStr;
-      const color = isToday ? 'var(--gold)' : (d.getDay()===0?'var(--red)':d.getDay()===6?'var(--blue)':'var(--text-3)');
+      const dow = d.getDay();
+      const color = isToday ? 'var(--gold)' : (dow===0?'var(--red)':dow===6?'var(--blue)':'var(--text-3)');
       const fw = isToday ? '700' : '400';
-      return `<span style="font-size:10px;color:${color};font-weight:${fw};flex:1;text-align:center">${DAYS_KO[d.getDay()]}</span>`;
-    }).join('');
-    el.style.display = 'flex';
+      const span = document.createElement('span');
+      span.style.cssText = `
+        position:absolute;
+        left:${labelPct(i)};
+        transform:translateX(-50%);
+        font-size:10px;
+        color:${color};
+        font-weight:${fw};
+        white-space:nowrap;
+      `;
+      span.textContent = DAYS_KO[dow];
+      el.appendChild(span);
+    });
   } else {
-    // 이번 달: 1일, 10일, 20일, 말일만 표시
-    const marks = [1, 10, 20, slots.length];
-    el.style.display = 'flex';
-    el.style.justifyContent = 'space-between';
-    el.innerHTML = slots.map((d,i) => {
+    // 이번 달: 1일, 10일, 20일, 말일 + 오늘만 표시
+    const lastDay = slots[slots.length-1].getDate();
+    const marks = new Set([1, 10, 20, lastDay]);
+    slots.forEach((d, i) => {
       const day = d.getDate();
-      const show = marks.includes(day);
       const isToday = dateStr(d) === todayStr;
-      if (!show && !isToday) return `<span style="flex:${1/slots.length*100}%;display:inline-block"></span>`;
+      if (!marks.has(day) && !isToday) return;
       const color = isToday ? 'var(--gold)' : 'var(--text-3)';
-      return `<span style="font-size:9px;color:${color};font-weight:${isToday?700:400};flex:${1/slots.length*100}%;text-align:center">${day}일</span>`;
-    }).join('');
+      const fw = isToday ? '700' : '400';
+      const span = document.createElement('span');
+      span.style.cssText = `
+        position:absolute;
+        left:${labelPct(i)};
+        transform:translateX(-50%);
+        font-size:9px;
+        color:${color};
+        font-weight:${fw};
+        white-space:nowrap;
+      `;
+      span.textContent = day + '일';
+      el.appendChild(span);
+    });
   }
 }
 
