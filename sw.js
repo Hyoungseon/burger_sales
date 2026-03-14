@@ -1,4 +1,4 @@
-const CACHE_NAME = 'burger-finance-v3';
+const CACHE_NAME = 'burger-finance-v4';
 const ASSETS = [
   '/',
   '/index.html',
