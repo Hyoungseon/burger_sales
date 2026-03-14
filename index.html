@@ -576,25 +576,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="card fu d3" style="padding-bottom:14px">
     <!-- 기간 선택 탭 -->
     <div style="display:flex;gap:6px;margin-bottom:14px">
-      <button class="daily-period-btn active" onclick="setDailyPeriod(7,this)">7일</button>
-      <button class="daily-period-btn" onclick="setDailyPeriod(14,this)">14일</button>
-      <button class="daily-period-btn" onclick="setDailyPeriod(30,this)">30일</button>
+      <button class="daily-period-btn active" onclick="setDailyMode('thisWeek',this)">이번 주</button>
+      <button class="daily-period-btn" onclick="setDailyMode('lastWeek',this)">지난 주</button>
+      <button class="daily-period-btn" onclick="setDailyMode('thisMonth',this)">이번 달</button>
     </div>
     <!-- 라인 차트 캔버스 -->
-    <div style="position:relative;height:120px;width:100%">
-      <canvas id="daily-line-chart" style="width:100%;height:120px"></canvas>
+    <div style="position:relative;height:140px;width:100%">
+      <canvas id="daily-line-chart" style="width:100%;height:140px"></canvas>
       <div id="daily-chart-empty" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px">
         <span style="font-size:28px">📅</span>
         <span style="font-size:12px;color:var(--text-3)">일 매출 데이터가 없어요</span>
         <button onclick="goScreen('screen-sales')" style="font-size:11px;padding:5px 12px;border-radius:20px;background:var(--gold-dim);border:1px solid rgba(232,184,75,.3);color:var(--gold);cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-weight:700">입력하러 가기</button>
       </div>
     </div>
-    <!-- x축 라벨 -->
-    <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 2px">
-      <span style="font-size:9px;color:var(--text-3)" id="daily-label-start"></span>
-      <span style="font-size:9px;color:var(--text-3)" id="daily-label-mid"></span>
-      <span style="font-size:9px;color:var(--text-3)" id="daily-label-end"></span>
-    </div>
+    <!-- x축 요일/날짜 라벨 -->
+    <div id="daily-x-labels" style="display:flex;justify-content:space-between;margin-top:4px;padding:0 2px"></div>
     <!-- 범례 + 요약 -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
       <div style="display:flex;gap:10px">
@@ -603,7 +599,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>홀</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:9px;color:var(--text-3);margin-bottom:2px">기간 일평균</div>
+        <div style="font-size:9px;color:var(--text-3);margin-bottom:2px" id="daily-period-label">이번 주 일평균</div>
         <div style="font-family:'Bebas Neue',cursive;font-size:15px;color:var(--gold)" id="daily-avg-label">—</div>
       </div>
     </div>
@@ -1329,13 +1325,52 @@ function refreshHome(){
 /* ════════════════════════════════
    일별 매출 추이 라인차트
 ════════════════════════════════ */
-let dailyPeriodDays = 7;
+let dailyMode = 'thisWeek'; // 'thisWeek' | 'lastWeek' | 'thisMonth'
+const DAYS_KO = ['일','월','화','수','목','금','토'];
 
-function setDailyPeriod(days, btn) {
-  dailyPeriodDays = days;
+function setDailyMode(mode, btn) {
+  dailyMode = mode;
   document.querySelectorAll('.daily-period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   buildDailyLineChart();
+}
+
+// 날짜 문자열 → Date 객체
+function parseDate(str) {
+  const [y,m,d] = str.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+// Date → 'YYYY-MM-DD'
+function dateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// 기간별 날짜 배열 생성 (슬롯: 해당 기간의 각 날짜)
+function getPeriodSlots() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const dow = today.getDay(); // 0=일, 1=월...
+
+  if (dailyMode === 'thisWeek') {
+    // 이번 주 월~일 (월요일 시작)
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    return Array.from({length:7}, (_,i) => {
+      const d = new Date(mon); d.setDate(mon.getDate()+i); return d;
+    });
+  } else if (dailyMode === 'lastWeek') {
+    // 지난 주 월~일
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1) - 7);
+    return Array.from({length:7}, (_,i) => {
+      const d = new Date(mon); d.setDate(mon.getDate()+i); return d;
+    });
+  } else {
+    // 이번 달 1일~말일
+    const year = today.getFullYear(), month = today.getMonth();
+    const lastDay = new Date(year, month+1, 0).getDate();
+    return Array.from({length:lastDay}, (_,i) => new Date(year, month, i+1));
+  }
 }
 
 function buildDailyLineChart() {
@@ -1344,35 +1379,52 @@ function buildDailyLineChart() {
   const emptyEl = document.getElementById('daily-chart-empty');
   if (!canvas) return;
 
-  // 최근 N일 데이터 추출
-  const sorted = [...store.sales].sort((a, b) => a.date.localeCompare(b.date));
-  const recent = sorted.slice(-dailyPeriodDays);
+  // 기간 슬롯 생성
+  const slots = getPeriodSlots();
+  const salesMap = {};
+  store.sales.forEach(s => { salesMap[s.date] = s; });
 
-  if (recent.length === 0) {
+  // 슬롯별 데이터 매핑 (없는 날은 null)
+  const slotData = slots.map(d => salesMap[dateStr(d)] || null);
+  const hasAny = slotData.some(s => s !== null);
+
+  // 기간 라벨
+  const modeLabel = dailyMode === 'thisWeek' ? '이번 주' : dailyMode === 'lastWeek' ? '지난 주' : '이번 달';
+  document.getElementById('daily-period-label').textContent = `${modeLabel} 일평균`;
+
+  if (!hasAny) {
     canvas.style.display = 'none';
     emptyEl.style.display = 'flex';
     document.getElementById('daily-avg-label').textContent = '—';
+    // x축 요일 그리기
+    renderXLabels(slots);
     return;
   }
   canvas.style.display = 'block';
   emptyEl.style.display = 'none';
 
-  // x축 라벨
-  const first = recent[0].date.slice(5);
-  const mid = recent[Math.floor(recent.length / 2)].date.slice(5);
-  const last = recent[recent.length - 1].date.slice(5);
-  document.getElementById('daily-label-start').textContent = first;
-  document.getElementById('daily-label-mid').textContent = mid;
-  document.getElementById('daily-label-end').textContent = last;
+  // x축 라벨 렌더링
+  renderXLabels(slots);
 
-  // 일평균
-  const avg = Math.round(recent.reduce((s, r) => s + r.total, 0) / recent.length);
+  // 일평균 (데이터 있는 날만)
+  const withData = slotData.filter(s => s !== null);
+  const avg = Math.round(withData.reduce((s,r) => s+r.total, 0) / withData.length);
   document.getElementById('daily-avg-label').textContent = fmt(avg);
+
+  // 값 배열 (null → 0으로 처리, 단 선은 끊김 처리)
+  const totals = slotData.map(s => s ? s.total : null);
+  const deliveries = slotData.map(s => s ? s.delivery : null);
+  const halls = slotData.map(s => s ? s.hall : null);
+  // 기준선 금액 (고정)
+  const REF_LINES = [2000000, 2500000, 3000000];
+  // maxVal은 기준선 최대값과 실제 데이터 중 큰 값으로
+  const dataMax = Math.max(...totals.filter(v=>v!==null), ...deliveries.filter(v=>v!==null), 1);
+  const maxVal = Math.max(dataMax, REF_LINES[REF_LINES.length-1] * 1.15);
 
   // Canvas 설정
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.parentElement.offsetWidth;
-  const H = 120;
+  const H = 140;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + 'px';
@@ -1381,74 +1433,134 @@ function buildDailyLineChart() {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  const PAD_L = 4, PAD_R = 4, PAD_T = 12, PAD_B = 4;
+  const PAD_L = 4, PAD_R = 52, PAD_T = 14, PAD_B = 4;
   const cW = W - PAD_L - PAD_R;
   const cH = H - PAD_T - PAD_B;
-  const n = recent.length;
+  const n = slots.length;
 
-  // 값 범위 계산
-  const totals = recent.map(r => r.total);
-  const deliveries = recent.map(r => r.delivery);
-  const halls = recent.map(r => r.hall);
-  const maxVal = Math.max(...totals, 1);
-  const minVal = 0;
+  function xPos(i) { return PAD_L + (n <= 1 ? cW/2 : i/(n-1)*cW); }
+  function yPos(v)  { return PAD_T + cH - (v/maxVal)*cH; }
 
-  function xPos(i) { return PAD_L + (n <= 1 ? cW / 2 : i / (n - 1) * cW); }
-  function yPos(v) { return PAD_T + cH - ((v - minVal) / (maxVal - minVal)) * cH; }
-
-  // 격자선 (3줄)
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-  ctx.lineWidth = 1;
-  [0.25, 0.5, 0.75].forEach(r => {
-    const y = PAD_T + cH * (1 - r);
-    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+  // ── 기준 금액선 (200만/250만/300만) ──
+  REF_LINES.forEach(amount => {
+    const y = yPos(amount);
+    // 점선
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(PAD_L, y);
+    ctx.lineTo(W - PAD_R + 4, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    // 금액 라벨 (우측)
+    const label = amount >= 1000000
+      ? (amount / 10000) + '만'
+      : amount.toLocaleString();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = `bold 9px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText(label, W - PAD_R + 7, y + 3.5);
   });
 
-  // 선 + 영역 그리기 함수
-  function drawLine(data, color, alpha) {
-    if (data.every(v => v === 0)) return;
-    // 영역 채우기
+  // 오늘 세로선 표시
+  const todayStr = dateStr(new Date());
+  slots.forEach((d, i) => {
+    if (dateStr(d) === todayStr) {
+      ctx.strokeStyle = 'rgba(232,184,75,0.2)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(xPos(i), PAD_T); ctx.lineTo(xPos(i), PAD_T+cH); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  // 선 그리기 (null 구간은 끊김 처리)
+  function drawLineWithGaps(data, color, alpha, lineW) {
+    const filled = data.map(v => v === null ? 0 : v);
+    // 영역
     ctx.beginPath();
-    ctx.moveTo(xPos(0), yPos(data[0]));
-    for (let i = 1; i < n; i++) ctx.lineTo(xPos(i), yPos(data[i]));
-    ctx.lineTo(xPos(n - 1), PAD_T + cH);
-    ctx.lineTo(xPos(0), PAD_T + cH);
-    ctx.closePath();
-    ctx.fillStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
-    ctx.fill();
+    let started = false;
+    for (let i=0; i<n; i++) {
+      if (data[i] === null) continue;
+      if (!started) { ctx.moveTo(xPos(i), yPos(filled[i])); started=true; }
+      else ctx.lineTo(xPos(i), yPos(filled[i]));
+    }
+    // 닫기
+    let lastIdx = -1, firstIdx = -1;
+    for (let i=0;i<n;i++) if(data[i]!==null){if(firstIdx<0)firstIdx=i;lastIdx=i;}
+    if (lastIdx >= 0) {
+      ctx.lineTo(xPos(lastIdx), PAD_T+cH);
+      ctx.lineTo(xPos(firstIdx), PAD_T+cH);
+      ctx.closePath();
+      ctx.fillStyle = color.replace('rgb','rgba').replace(')',`,${alpha})`);
+      ctx.fill();
+    }
     // 선
-    ctx.beginPath();
-    ctx.moveTo(xPos(0), yPos(data[0]));
-    for (let i = 1; i < n; i++) ctx.lineTo(xPos(i), yPos(data[i]));
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.lineJoin = 'round';
-    ctx.stroke();
+    ctx.beginPath(); started=false;
+    for (let i=0;i<n;i++) {
+      if (data[i]===null) { started=false; continue; }
+      if (!started) { ctx.moveTo(xPos(i), yPos(filled[i])); started=true; }
+      else ctx.lineTo(xPos(i), yPos(filled[i]));
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = lineW; ctx.lineJoin='round'; ctx.stroke();
   }
 
-  // 색상 (CSS 변수 → 직접 값)
-  drawLine(halls,     'rgb(232,184,75)',  0.15);  // gold - 홀
-  drawLine(deliveries,'rgb(96,165,250)',  0.12);  // blue - 배달
-  drawLine(totals,    'rgb(52,211,153)',  0.10);  // green - 전체
+  drawLineWithGaps(halls,      'rgb(232,184,75)', 0.12, 1.5);
+  drawLineWithGaps(deliveries, 'rgb(96,165,250)',  0.10, 1.5);
+  drawLineWithGaps(totals,     'rgb(52,211,153)',  0.08, 2);
 
-  // 데이터 포인트 + 툴팁용 점
-  [[totals,'rgb(52,211,153)'],[deliveries,'rgb(96,165,250)'],[halls,'rgb(232,184,75)']].forEach(([data, color]) => {
-    if (data.every(v => v === 0)) return;
-    data.forEach((v, i) => {
+  // 데이터 포인트
+  [[totals,'rgb(52,211,153)'],[deliveries,'rgb(96,165,250)'],[halls,'rgb(232,184,75)']].forEach(([data,color])=>{
+    data.forEach((v,i)=>{
+      if(v===null) return;
       ctx.beginPath();
-      ctx.arc(xPos(i), yPos(v), n > 20 ? 2 : 3, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
+      ctx.arc(xPos(i), yPos(v), n>20?2:3, 0, Math.PI*2);
+      ctx.fillStyle=color; ctx.fill();
     });
   });
 
-  // 마지막 날 값 표시
-  const lastTotal = totals[n - 1];
-  ctx.fillStyle = 'rgb(52,211,153)';
-  ctx.font = `bold ${Math.round(9 * dpr) / dpr}px Noto Sans KR`;
-  ctx.textAlign = 'right';
-  const labelY = Math.max(PAD_T + 10, yPos(lastTotal) - 5);
-  ctx.fillText(fmt(lastTotal), W - PAD_R, labelY);
+  // 가장 최근 데이터 값 표시 (우측)
+  const lastWithData = [...slotData].reverse().find(s=>s!==null);
+  if(lastWithData){
+    const lastIdx = slotData.lastIndexOf(lastWithData);
+    ctx.fillStyle='rgb(52,211,153)';
+    ctx.font=`bold 9px sans-serif`;
+    ctx.textAlign='left';
+    ctx.fillText(fmt(lastWithData.total), W-PAD_R+6, yPos(lastWithData.total)+4);
+  }
+}
+
+// x축 요일/날짜 라벨 렌더링
+function renderXLabels(slots) {
+  const el = document.getElementById('daily-x-labels');
+  if (!el) return;
+  const todayStr = dateStr(new Date());
+  if (dailyMode === 'thisWeek' || dailyMode === 'lastWeek') {
+    // 월~일 7개 요일 표시
+    el.innerHTML = slots.map(d => {
+      const isToday = dateStr(d) === todayStr;
+      const color = isToday ? 'var(--gold)' : (d.getDay()===0?'var(--red)':d.getDay()===6?'var(--blue)':'var(--text-3)');
+      const fw = isToday ? '700' : '400';
+      return `<span style="font-size:10px;color:${color};font-weight:${fw};flex:1;text-align:center">${DAYS_KO[d.getDay()]}</span>`;
+    }).join('');
+    el.style.display = 'flex';
+  } else {
+    // 이번 달: 1일, 10일, 20일, 말일만 표시
+    const marks = [1, 10, 20, slots.length];
+    el.style.display = 'flex';
+    el.style.justifyContent = 'space-between';
+    el.innerHTML = slots.map((d,i) => {
+      const day = d.getDate();
+      const show = marks.includes(day);
+      const isToday = dateStr(d) === todayStr;
+      if (!show && !isToday) return `<span style="flex:${1/slots.length*100}%;display:inline-block"></span>`;
+      const color = isToday ? 'var(--gold)' : 'var(--text-3)';
+      return `<span style="font-size:9px;color:${color};font-weight:${isToday?700:400};flex:${1/slots.length*100}%;text-align:center">${day}일</span>`;
+    }).join('');
+  }
 }
 
 function buildMiniBarChart(id){
